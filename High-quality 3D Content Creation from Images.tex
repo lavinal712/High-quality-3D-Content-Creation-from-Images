@@ -1,0 +1,292 @@
+\documentclass[cn,hazy,blue,14pt,screen]{elegantnote}
+\title{High-quality 3D Content Creation from Images}
+
+\author{Austin}
+\institute{USTC}
+
+\date{}
+
+\usepackage{array}
+\usepackage{amssymb}
+
+\begin{document}
+	
+\maketitle
+
+\tableofcontents
+	
+\section{Why 3D content creation from images(为什么我们要从图片生成三维内容)}
+
+\subsection{What are 3D contents(什么是三维内容)}
+
+3D contents are combinations of shape and appearance models that canbe rendered into 2D images from different viewpoints.
+
+3D 内容是形状和外观组合模型，可以从不同视点渲染为 2D 图像。
+
+Shape and appearance, where appearance consists of material and lighting, can create RGB images through rendering.
+
+形状和外观（其中外观由材质和照明组成）可以通过渲染创建 RGB 图像。
+
+\subsection{Rendering and inverse rendering(渲染与反渲染)}
+
+Creating a 3D content requires strong expertise and is time-consuming.
+
+创建 3D 内容需要强大的专业知识，而且耗时。
+
+Images are cheap to acquire, and this leads to inverse rendering.
+
+图片的获取成本很低，使得我们关注反渲染技术。
+
+计算机图形学：3D contents $\Rightarrow$ RGB images
+
+Rendering $--$ efficient, high-quality.
+
+渲染高效，并且生成的图像质量很高。
+
+计算机视觉：Images $\Rightarrow$ 3D contents
+
+Inverse Rendering $--$ change lighting, material, combination of contents etc. $\Rightarrow$ new images.
+
+反渲染能够改变原有的打光、材质、内容的组合等，生成新的图像。这些图像可能是三维内容在不同的打光环境下生成的，也可能是改变了三维内容的材质，或者是对内容进行重新组合后生成的。
+
+\section*{Qustion 问答环节}
+
+三维重建算反渲染吗？
+
+三维重建是反渲染的一种，重点在重建三维内容的 Shape 方面，关注于打造高质量的三维几何模型，与 NeRF 存在不同。目前三维重建也在向 Appearance 方面进军，对内容的材质和照明也有关注。
+
+\subsection{Three key factors in inverse rendering(反渲染中的三个重要因素)}
+
+\begin{itemize}
+\item What shape representations to use?
+\item What appearance representations to use?
+\item What rendering operator to use?
+\end{itemize}
+
+\subsubsection{Shape representations}
+
+\begin{itemize}
+\item Mesh 网格
+\item Point cloud 点云
+\item Occupancy field 占领场
+\item Signed distance field(SDF) 有向距离场
+\end{itemize}
+
+\subsubsection{Appearance representations}
+
+\begin{itemize}
+\item Material texture map \& environment lighting
+\item Radiance field(surface light filed\cite{wood2000surface})
+\end{itemize}
+
+第一种方法使用 unwrap 展开，在每个点存储材料。光线由 360 image 全景图生成。这是理想的外观表征方式，但是实际情况中，会变得难解和复杂。
+
+第二种使用辐射场(或者表明光线场)，打包材料和光线，使得外观表征变得简单。但是它难编辑，并且难以表示内容在新环境下的情况。
+
+$(x,y,z,\theta,\phi)\rightarrow rgb$
+
+\subsubsection{Rendering operators}
+
+\begin{itemize}
+\item Depend on the specific shape and appearance representations(图像的渲染取决于三维内容特定的形状和外观表征)
+\item Need to be fully differentiable(ideal) (渲染在理想情况下是完全可区分的)
+\end{itemize}
+
+\section*{Qustion 问答环节}
+
+三维重建和 NeRF 哪个效果比较好？
+
+三维重建的效果比较好。三维重建的目标就是建立高质量的三维几何模型，而 NeRF 所建立的模型表面较为 noisy。
+
+\section{Why NeRf is a big thing(为什么 NeRF 很重要)}
+
+NeRF can generate highly photo-realastic novel views.
+
+NeRF 可以生成高度真实的新视图。
+
+\begin{example}
+28 cuptured photos $\rightarrow$ NeRF(3D content) $\rightarrow$ render at unseen viewpoints.
+\end{example}
+
+\subsection{Break NeRF into 3 components(NeRF 的三个组成部分)}
+
+\begin{itemize}
+\item Shape\\
+Soft opacity field(fog) 软不透明度场\\
+$(x,y,z)\rightarrow\sigma$
+\item Appearance\\
+Radiance field(surface light filed)\\
+$(x,y,z,\theta,\phi)\rightarrow rgb$
+\item Rendering\\
+$(x,y,z,\theta,\phi)\rightarrow F_\Theta\rightarrow(RGB\sigma)$
+\end{itemize}
+
+\subsection{Take-home message from NeRF(从 NeRF 中能了解什么)}
+
+\subsubsection{Soft shape}
+
+\begin{itemize}
+\item initialized as nothingness(初始化为空)
+\item grow as needed(依据需要而变)
+\item compare with hard geometry, e.g., DVR\cite{niemeyer2020differentiable}, IDR\cite{yariv2020multiview}.
+\begin{itemize}
+\item $\checkmark$ Not require object segmentation masks: genus issue.
+\item $\checkmark$ No boundary discountinuity: easy for differentiable rending.
+\item $\times$ Rendering is more expensive; editing is hard.
+\end{itemize}
+\item without neural networks, but soft shape: fast.\cite{fridovich2022plenoxels}\cite{sun2022direct}
+\end{itemize}
+
+\subsubsection{Fourier features fixes the spectal bias of MLPs(傅里叶特征法修复了 MLP 的隐含偏差)}
+
+\[\gamma(\bold{v})=[\cdots,\cos(2\pi\sigma^{j/m}\bold{v}),\sin(2\pi\sigma^{j/m}\bold{v}),\cdots]^{\mathrm{T}}\]
+
+\subsubsection{Neural fields for inverse rendering(用于反渲染的神经场)}
+
+\begin{itemize}
+\item Compact: each NeRF(3D content) is only about 10 MB.
+\begin{itemize}
+\item small
+\item free to transport
+\end{itemize}
+\item Continuous: scenes are not discretized.
+\begin{itemize}
+\item high-quality
+\end{itemize}
+\item Flexible and easy for optimization: implicit regularizationfrom neural networks.
+\end{itemize}
+
+\subsection{Unbounded scene and anti-aliasing(无界场景与抗锯齿)}
+
+\subsubsection{Five capture scenarios(五种拍摄场景)}
+
+\begin{itemize}
+\item 360 Inward-facing (no background)
+\item 360 Outward-facing
+\item Foreward-facing
+\item Unconstrained 360 Outward-facing (irregular)
+\item 360 Inward + Outward-facing
+\end{itemize}
+
+\subsubsection{NeRF++}
+
+NeRF's resolution for 360 capture of unbounded scene: local or overall?
+
+NeRF++: separate foreground and background; semmetry between 360 inward-facing and 360 outward-facing captures.\cite{zhang2020nerf++}
+
+\begin{itemize}
+\item Map unbounded space outside a sphere into a unit cube.
+\item Farther-away points get more "squeezed" after mapping.
+\end{itemize}
+
+\subsubsection{Conclusion}
+
+\begin{itemize}
+\item NeRF faces resolution for 360 capture of unbounded scene.
+\item NeRF++ separates foreground and background modelling, as NeRF is compositional.
+\item NeRF++ uses inverted sphere parametrization to establish semmetry between 360 inward-facing and 360 outward-facing captures.
+\end{itemize}
+
+\subsubsection{NeRF's anti-aliasing issue}
+
+Nyquist-Shannon sampling theorem(fs$>$2B)
+
+key: low pass filter
+
+MipNeRF: low-pass filter the Fourier features(Fourier features are vector functions of the spatial location).
+
+\[\bold{v}=(x,y,z)\].
+
+\begin{itemize}
+\item NeRF suffers from anti-aliasing issue.
+\item Images are discrete signals.
+MipNeRF introduces low-pass filtering over the Fourier features, where the filter size is controlled by the cone size.\cite{barron2021mip}
+\end{itemize}
+
+\section{Editable 3D contents(可编辑三维内容)}
+
+\subsection{Relighting, material re-touching(重打光与材料编辑)}
+
+\subsubsection{What NeRF can and can't do}
+
+\begin{itemize}
+\item NeRF is great 3D content in term of synthesizing highly photo realistic novel views.
+\item Future application:
+\begin{itemize}
+\item Put mutiple NeRF in the same environment
+\item Retouch appearance
+\item Create artistic 3D contents 
+\item Interactive editings
+\item Physical simulation
+\item Object insertion
+\item Animations
+\end{itemize}
+\end{itemize}
+
+Mesh and material textures remain dominate 3D content format today.
+
+Input: photomatric images $\rightarrow$ Output: 3D assets
+
+But mesh and material textures are hard to optimize directly.
+\begin{itemize}
+\item Fixed topology, fixed resolution
+\item Hard to avoid self-intersections
+\end{itemize}
+
+Leverage the insights from NeRF to ease optimization?
+\begin{itemize}
+\item During optimization time, use neural field for shape and appearance representations.
+\begin{itemize}
+\item Use soft shape for quickly instantiating geometry from nothingness.
+\item Use hard shape for physics-based rendering.
+\end{itemize}
+\item During test-time, use mesh and material textures.
+\end{itemize}
+
+\subsubsection{Stage of NeRF}
+
+\begin{itemize}
+\item Optimize a thick surface via volumetric rendering.
+\item Refine a surface and solve for material \& lighting.
+\begin{itemize}
+\item Edge-aware surface rendering
+\begin{itemize}
+\item Shading at edge pixels(visiblity discontinuities) contain shape cues.
+\item Sub-optimal shape reconstruction without accounting for such edges.
+\item Split an edge pixel into havles, and blend color of both halves.
+\end{itemize}
+\end{itemize}
+\end{itemize}
+
+\subsection{Stylized appearance(风格化的外观)}
+
+\subsubsection{Artistic 3D content creation through stylization(通过风格化进行艺术 3D 内容创作)}
+
+Style loss $\underleftarrow{\mathrm{render\ \&\ compare}}$ 3D content like NeRF $\underrightarrow{\mathrm{render\ \&\ compare}}$ L1/L2 loss
+
+Style loss measures mismatch in feature sets.
+
+\subsubsection{Nearest Neighbor Feature Matching(NNFM) style loss}
+
+\[\ell_{nnfm}(\bold{F}_{render},\bold{F}_{style})=\dfrac{1}{N}\sum_{i,j}\min_{i',j'}D(\bold{F}_{render}(i,j),\bold{F}_{style}(i',j'))\]
+\[D(\bold{v}_1,\bold{v}_2)=1-\bold{v}_1^{\mathrm{T}}\bold{v}_2\sqrt{\bold{v}_1^{\mathrm{T}}\bold{v}_1\bold{v}_2^{\mathrm{T}}\bold{v}_2}\]
+
+\subsection{Other things(其他内容)}
+
+ARF project page: \href{https://www.cs.cornell.edu/projects/arf}{https://www.cs.cornell.edu/projects/arf}
+
+\subsubsection{Paper and resourses}
+
+\begin{itemize}
+\item Mildenhall et al. ECCV 2020. NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis.
+\item Zhang et al. ArXiv 2020. Nerf++: Analyzing and Improving Neural Radiance Fields.
+\item Barron et al. CVPR 2021. Mip-NeRF: A Multiscale Reprentation for Anti-aliasing Neural Radiance Fields.
+\item Zhang et al. CVPR 2022. IRON: Inverse Rendering by Optimizing Neural SDFs and Materials from Photometric Images.
+\item Zhang et al. ECCV 2022. ARF: Artistic Radiance Fields.
+\item Awesome NeRF: \href{http://github.com/yenchelin/awesome-NeRF}{http://github.com/yenchelin/awesome-NeRF}.
+\end{itemize}
+
+\bibliographystyle{IEEEtran}
+\bibliography{reference}
+
+\end{document}
